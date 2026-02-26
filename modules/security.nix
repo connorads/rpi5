@@ -1,0 +1,26 @@
+# Hardened SSH + fail2ban for internet-facing NixOS servers.
+{ ... }:
+{
+  security.sudo.wheelNeedsPassword = false;
+
+  services.openssh = {
+    enable = true;
+    settings = {
+      PermitRootLogin = "no";
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
+      PubkeyAuthentication = true;
+      MaxAuthTries = 3;
+      LoginGraceTime = 20;
+      AllowTcpForwarding = false;
+      AllowAgentForwarding = false;
+      X11Forwarding = false;
+    };
+  };
+
+  services.fail2ban = {
+    enable = true;
+    maxretry = 3;
+    bantime = "1h";
+  };
+}

@@ -2,6 +2,9 @@
 # RPi5 NixOS Configuration
 # ==============================================================================
 #
+# System config only. User environment (shell, tools, git, tmux, etc.) is
+# managed by dotfiles via standalone home-manager — rebuild with `hms`.
+#
 # Configurations:
 #   - nixosConfigurations."rpi5"  : Raspberry Pi 5 (NixOS)
 #   - installerImages.rpi5       : Pi 5 installer (SSH keys baked in)
@@ -16,17 +19,10 @@
 
   inputs = {
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/main";
-
-    home-manager.url = "github:nix-community/home-manager";
-    home-manager.inputs.nixpkgs.follows = "nixos-raspberrypi/nixpkgs";
   };
 
   outputs =
-    inputs@{
-      self,
-      nixos-raspberrypi,
-      home-manager,
-    }:
+    { self, nixos-raspberrypi }:
     {
       formatter.aarch64-linux = nixos-raspberrypi.inputs.nixpkgs.legacyPackages.aarch64-linux.nixfmt;
 
@@ -45,7 +41,8 @@
               ];
             }
           )
-          home-manager.nixosModules.home-manager
+          ./modules/base.nix
+          ./modules/security.nix
           ./configuration.nix
         ];
       };

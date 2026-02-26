@@ -2,16 +2,27 @@
 
 ## Overview
 
-This config uses [nixos-raspberrypi](https://github.com/nvmd/nixos-raspberrypi) for Pi 5 kernel and firmware support.
+This repo owns the **NixOS system config** for the Pi 5 — hardware, networking, SSH, Tailscale, auto-upgrade, Docker.
 
-**Why two steps?** Ideally we'd build one image with everything (connor user, home-manager, full config). But `nixos-raspberrypi`'s bootloader module conflicts with the upstream sd-image module's extlinux bootloader - you can't combine them. So we use a two-step process:
+**User environment** (shell, tools, git, tmux, starship, etc.) comes from [dotfiles](https://github.com/connorads/dotfiles) via standalone home-manager. Two rebuilds on the Pi:
 
-1. **Build installer image** - minimal NixOS with `nixos` user and your SSH keys baked in
-2. **Deploy full config** - boot, SSH in, run `nixos-rebuild switch` to deploy your actual config
+| What | Command | Source |
+|------|---------|--------|
+| System | `nrs` | `~/git/rpi5` (via `$NIXOS_FLAKE`) |
+| User env | `hms` | `~/.config/nix` (dotfiles) |
+
+This separation lets an agent on the Pi modify NixOS system config without touching dotfiles.
+
+Uses [nixos-raspberrypi](https://github.com/nvmd/nixos-raspberrypi) for Pi 5 kernel and firmware support.
+
+**Why two steps?** Ideally we'd build one image with everything (connor user, full config). But `nixos-raspberrypi`'s bootloader module conflicts with the upstream sd-image module's extlinux bootloader — you can't combine them. So we use a two-step process:
+
+1. **Build installer image** — minimal NixOS with `nixos` user and your SSH keys baked in
+2. **Deploy full config** — boot, SSH in, run `nixos-rebuild switch` to deploy your actual config
 
 The flake has:
-- `nixosConfigurations.rpi5` - your running system config
-- `installerImages.rpi5` - the bootstrap installer image
+- `nixosConfigurations.rpi5` — your running system config
+- `installerImages.rpi5` — the bootstrap installer image
 
 ## Build Installer Image
 
@@ -44,17 +55,36 @@ diskutil eject disk4
    ```bash
    sudo nixos-rebuild switch --flake 'github:connorads/rpi5#rpi5'
    ```
-5. SSH as `connor@<pi-ip>` (the user in your config) - passwordless sudo enabled.
+5. SSH as `connor@<pi-ip>` (the user in your config) — passwordless sudo enabled.
 
 ## Post-boot Setup
 
-Run install script as connor (clones dotfiles):
+After first boot and system deploy:
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/connorads/dotfiles/master/install.sh | bash
-```
+1. SSH as `connor`:
+   ```bash
+   ssh connor@<pi-ip>
+   ```
 
-The script detects NixOS and skips Nix/home-manager/mise install (NixOS manages those).
+2. Clone dotfiles (sets up shell, tools, user env):
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/connorads/dotfiles/master/install.sh | bash
+   ```
+
+3. Set NixOS flake path in machine-local config:
+   ```bash
+   echo 'export NIXOS_FLAKE="$HOME/git/rpi5"' >> ~/.zshrc.local
+   ```
+
+4. Deploy user environment (gives you the full "feels like home" experience):
+   ```bash
+   hms
+   ```
+
+5. Clone system config (for local edits and agent access):
+   ```bash
+   git clone https://github.com/connorads/rpi5.git ~/git/rpi5
+   ```
 
 ## Tailscale Setup
 
@@ -76,21 +106,16 @@ Now `ts status`, `ts up` etc work without sudo, and the Pi is accessible as `rpi
 
 ## Updating the Pi
 
-### From the Pi itself (after repo cloned)
+### System config (this repo)
 
 ```bash
-sudo nixos-rebuild switch --flake ~/rpi5#rpi5
-```
+# From the Pi (after repo cloned to ~/git/rpi5)
+nrs                      # reads $NIXOS_FLAKE
 
-### From GitHub (no clone needed)
-
-```bash
+# From GitHub (no clone needed)
 sudo nixos-rebuild switch --flake 'github:connorads/rpi5#rpi5'
-```
 
-### Remotely from Mac (once on Tailscale)
-
-```bash
+# Remotely from Mac (once on Tailscale)
 nixos-rebuild switch \
   --flake ~/rpi5#rpi5 \
   --build-host connor@rpi5 \
@@ -98,7 +123,19 @@ nixos-rebuild switch \
   --use-remote-sudo
 ```
 
-### Automatic updates
+### User environment (dotfiles)
+
+```bash
+hms                      # home-manager switch from ~/.config/nix
+```
+
+### Both at once
+
+```bash
+up                       # updates tools, flake lock, then runs nrs + hms on NixOS
+```
+
+### Automatic system updates
 
 The Pi auto-upgrades daily at 04:00 from `github:connorads/rpi5#rpi5`. Push to main and the next auto-upgrade picks it up.
 
@@ -113,7 +150,7 @@ nix-prefetch-url https://github.com/connorads.keys
 # Update sha256 in:
 #   - configuration.nix (for running system)
 #   - flake.nix installerImages.rpi5 (for installer image)
-sudo nixos-rebuild switch --flake ~/rpi5#rpi5
+nrs
 ```
 
 ## Fallback: Generic Installer
@@ -124,7 +161,7 @@ If you can't build the custom installer image:
    ```bash
    nix build github:nvmd/nixos-raspberrypi#installerImages.rpi5
    ```
-2. Boot Pi with HDMI connected - random credentials shown on screen
+2. Boot Pi with HDMI connected — random credentials shown on screen
 3. SSH in with those credentials, then:
    ```bash
    curl -fsSL https://raw.githubusercontent.com/connorads/dotfiles/master/install.sh | bash
