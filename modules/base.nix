@@ -27,6 +27,9 @@
   time.timeZone = "Europe/London";
   programs.zsh.enable = true;
 
+  # Dynamic linker shim so mise-installed prebuilt binaries (node, bun, etc.) work on NixOS
+  programs.nix-ld.enable = true;
+
   environment.systemPackages = with pkgs; [
     vim
     git
