@@ -30,6 +30,11 @@
   # Dynamic linker shim so mise-installed prebuilt binaries (node, bun, etc.) work on NixOS
   programs.nix-ld.enable = true;
 
+  services.journald.extraConfig = ''
+    SystemMaxUse=200M
+    RuntimeMaxUse=100M
+  '';
+
   environment.systemPackages = with pkgs; [
     vim
     git

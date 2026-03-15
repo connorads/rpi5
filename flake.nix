@@ -43,6 +43,7 @@
           )
           ./modules/base.nix
           ./modules/security.nix
+          ./modules/hardening.nix
           ./configuration.nix
         ];
       };

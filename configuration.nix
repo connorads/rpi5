@@ -28,6 +28,7 @@
       allowedTCPPorts = [ 22 ]; # SSH open for local access
       trustedInterfaces = [ "tailscale0" ];
       allowedUDPPorts = [ config.services.tailscale.port ];
+      logRefusedConnections = true;
     };
   };
 
