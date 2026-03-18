@@ -41,5 +41,13 @@
     htop
     ncdu
     kitty.terminfo
+
+    # Build toolchain (cargo/rustc native deps: sqlite, openssl, aws-lc-sys, etc.)
+    gcc
+    pkg-config
+    openssl.dev
+    sqlite.dev
+    cmake
+    perl
   ];
 }
