@@ -13,7 +13,7 @@
       MaxAuthTries = 3;
       LoginGraceTime = 20;
       AllowTcpForwarding = false;
-      AllowAgentForwarding = false;
+      AllowAgentForwarding = true;
       X11Forwarding = false;
     };
   };
