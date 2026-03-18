@@ -44,6 +44,7 @@
 
     # Build toolchain (cargo/rustc native deps: sqlite, openssl, aws-lc-sys, etc.)
     gcc
+    gnumake
     pkg-config
     openssl.dev
     sqlite.dev
