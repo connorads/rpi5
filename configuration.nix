@@ -25,9 +25,17 @@
     useDHCP = lib.mkDefault true;
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 22 ]; # SSH open for local access
-      trustedInterfaces = [ "tailscale0" ];
+
+      # Keep SSH available on the local LAN only.
+      # Using the wired interface here avoids trusting every Tailscale peer.
+      interfaces.end0.allowedTCPPorts = [ 22 ];
+
+      # Open only the UDP port tailscaled needs for peer connectivity.
+      # Tailnet SSH authorisation is handled by Tailscale policy instead of
+      # blanket-trusting all traffic that arrives on tailscale0.
       allowedUDPPorts = [ config.services.tailscale.port ];
+      trustedInterfaces = [ ];
+
       logRefusedConnections = true;
     };
   };
